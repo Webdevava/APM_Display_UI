@@ -33,9 +33,9 @@ const getAgeGroup = (age) => {
 
 const getImageUrl = (ageGroup, gender) => {
   if (gender === "Other") {
-    return "/transgender.png";
+    return "https://raw.githubusercontent.com/Webdevava/APM_Display_UI/4d15eb3f908038fd0c6836c565541bece83d8e06/public/transgender.png";
   }
-  return `/${ageGroup}_${gender}.svg`;
+  return `https://raw.githubusercontent.com/Webdevava/APM_Display_UI/4d15eb3f908038fd0c6836c565541bece83d8e06/public/${ageGroup}_${gender.toLowerCase()}.svg`;
 };
 
 export default function FamilyMemberCard({
