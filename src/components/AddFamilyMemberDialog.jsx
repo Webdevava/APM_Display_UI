@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import Keyboard from "react-simple-keyboard";
+import "react-simple-keyboard/build/css/index.css";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { User, Calendar, Users } from "lucide-react";
 
-export default function AddFamilyMemberDialog({
+export default function FullScreenFamilyMemberDialog({
   isOpen,
   onClose,
   onSave,
@@ -27,6 +29,10 @@ export default function AddFamilyMemberDialog({
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [activeInput, setActiveInput] = useState("");
+  const keyboardRef = useRef();
+  const containerRef = useRef();
 
   useEffect(() => {
     if (editingMember) {
@@ -40,6 +46,22 @@ export default function AddFamilyMemberDialog({
     }
   }, [editingMember]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
+        setShowKeyboard(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleSave = () => {
     if (name && age && gender) {
       onSave({ name, age: parseInt(age), gender });
@@ -47,60 +69,103 @@ export default function AddFamilyMemberDialog({
     }
   };
 
+  const handleInputFocus = (inputName) => {
+    setShowKeyboard(true);
+    setActiveInput(inputName);
+  };
+
+  const handleInputChange = (input) => {
+    if (activeInput === "name") {
+      setName(input);
+    } else if (activeInput === "age") {
+      setAge(input);
+    }
+  };
+
+  const onKeyPress = (button) => {
+    if (button === "{enter}") {
+      setShowKeyboard(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-6 w-6" />
+      <DialogContent
+        className="max-w-[700px] h-[100%] p-0 flex flex-col"
+        ref={containerRef}
+      >
+        <DialogHeader className="p-6 bg-background border-b">
+          <DialogTitle className="flex items-center gap-2 text-lg h-0">
+            <Users className="h-8 w-8" />
             {editingMember ? "Edit Family Member" : "Add Family Member"}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-6 py-4">
-          <div className="flex items-center gap-4">
-            <User className="h-5 w-5 text-muted-foreground" />
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter name"
-              />
+        <div className="flex-grow overflow-y-auto p-4">
+          <div className="grid gap-6">
+            <div className="flex items-center gap-4">
+              <User className="h-6 w-6 text-muted-foreground" />
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="name" className="text-lg">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onFocus={() => handleInputFocus("name")}
+                  placeholder="Enter name"
+                  className="text-lg p-3"
+                />
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="age">Age</Label>
-              <Input
-                id="age"
-                type="number"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="Enter age"
-              />
+            <div className="flex items-center gap-4">
+              <Calendar className="h-6 w-6 text-muted-foreground" />
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="age" className="text-lg">
+                  Age
+                </Label>
+                <Input
+                  id="age"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  onFocus={() => handleInputFocus("age")}
+                  placeholder="Enter age"
+                  className="text-lg p-3"
+                />
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-4">
+              <Users className="h-6 w-6 text-muted-foreground" />
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="gender" className="text-lg">
+                  Gender
+                </Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger className="text-lg p-3">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button onClick={onClose} variant="outline">
+        {showKeyboard && (
+          <div className="w-full bg-background border-t p-0">
+            <Keyboard
+              keyboardRef={(r) => (keyboardRef.current = r)}
+              layoutName="default"
+              onChange={handleInputChange}
+              onKeyPress={onKeyPress}
+            />
+          </div>
+        )}
+        <DialogFooter className="p-2 bg-background border-t">
+          <Button onClick={onClose} variant="outline" className="mr-2">
             Cancel
           </Button>
           <Button onClick={handleSave} type="submit">

@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Keyboard from "react-simple-keyboard";
+import "react-simple-keyboard/build/css/index.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -11,6 +13,10 @@ export default function Onboarding({ onComplete }) {
   const [hhid, setHhid] = useState("");
   const [otp, setOtp] = useState("");
   const [progress, setProgress] = useState(0);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [inputName, setInputName] = useState("");
+  const keyboardRef = useRef();
+  const containerRef = useRef();
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -37,6 +43,41 @@ export default function Onboarding({ onComplete }) {
     }
     return () => clearInterval(timer);
   }, [currentStep]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
+        setShowKeyboard(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleInputFocus = (inputName) => {
+    setShowKeyboard(true);
+    setInputName(inputName);
+  };
+
+  const handleInputChange = (input) => {
+    if (inputName === "hhid") {
+      setHhid(input);
+    } else if (inputName === "otp") {
+      setOtp(input);
+    }
+  };
+
+  const onKeyPress = (button) => {
+    if (button === "{enter}") {
+      setShowKeyboard(false);
+    }
+  };
 
   const steps = [
     {
@@ -73,6 +114,7 @@ export default function Onboarding({ onComplete }) {
             placeholder="Enter HHID"
             value={hhid}
             onChange={(e) => setHhid(e.target.value)}
+            onFocus={() => handleInputFocus("hhid")}
             className="mb-4"
           />
           <Button className="w-full" onClick={nextStep} disabled={!hhid}>
@@ -91,6 +133,7 @@ export default function Onboarding({ onComplete }) {
             placeholder="Enter OTP"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
+            onFocus={() => handleInputFocus("otp")}
             className="mb-4"
           />
           <Button className="w-full" onClick={nextStep} disabled={!otp}>
@@ -114,7 +157,10 @@ export default function Onboarding({ onComplete }) {
   ];
 
   return (
-    <div className="h-full flex items-center justify-center bg-background p-4">
+    <div
+      className="h-full flex flex-col items-center justify-center bg-background p-4"
+      ref={containerRef}
+    >
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
@@ -136,6 +182,16 @@ export default function Onboarding({ onComplete }) {
           </Card>
         </motion.div>
       </AnimatePresence>
+      {showKeyboard && (
+        <div className="mt-4 w-full">
+          <Keyboard
+            keyboardRef={(r) => (keyboardRef.current = r)}
+            layoutName="default"
+            onChange={handleInputChange}
+            onKeyPress={onKeyPress}
+          />
+        </div>
+      )}
     </div>
   );
 }
